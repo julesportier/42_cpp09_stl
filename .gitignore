@@ -1,0 +1,8 @@
+# compilation output
+*.[oda]
+*.out
+*.gch
+build/
+# bear output
+compile_commands.json
+.cache/

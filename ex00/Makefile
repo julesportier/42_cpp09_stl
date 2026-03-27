@@ -34,7 +34,8 @@ NAME := btc
 SRC_DIR := src
 vpath %.cpp $(SRC_DIR)
 SRC := main.cpp \
-	   Date.cpp
+	   Date.cpp \
+	   utils.cpp
 
 BUILD_DIR := build
 OBJ := $(SRC:%.cpp=$(BUILD_DIR)/%.o)
@@ -49,6 +50,7 @@ DEP_FILES := $(OBJ:.o=.d)
 all: $(BUILD_DIR) $(NAME)
 
 dbg: CXXFLAGS = $(CXXFLAGS_DB)
+dbg: CXXFLAGS += -DDBG
 dbg: all
 noerr: CXXFLAGS = $(CXXFLAGS_NE)
 noerr: all

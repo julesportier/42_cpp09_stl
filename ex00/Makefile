@@ -33,7 +33,8 @@ NAME := btc
 
 SRC_DIR := src
 vpath %.cpp $(SRC_DIR)
-SRC :=	main.cpp
+SRC := main.cpp \
+	   Date.cpp
 
 BUILD_DIR := build
 OBJ := $(SRC:%.cpp=$(BUILD_DIR)/%.o)

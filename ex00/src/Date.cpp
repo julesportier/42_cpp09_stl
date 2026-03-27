@@ -1,17 +1,18 @@
 #include "Date.hpp"
-#include "utils.hpp"
 #include <vector>
 #include <sstream>
+#include <cstdlib>
+#include <errno.h>
+#include <limits>
 
 /**************************
 * CONSTRUCTORS/DESTRUCTOR *
 **************************/
 Date::Date()
-{
-	m_year = 0;
-	m_month = 0;
-	m_day = 0;
-}
+	: m_year(0)
+	, m_month(0)
+	, m_day(0)
+{}
 
 Date::Date(const std::string& date)
 {
@@ -19,11 +20,10 @@ Date::Date(const std::string& date)
 }
 
 Date::Date(const Date& src)
-{
-	m_year = src.m_year;
-	m_month = src.m_month;
-	m_day = src.m_day;
-}
+	: m_year(src.m_year)
+	, m_month(src.m_month)
+	, m_day(src.m_day)
+{}
 
 Date::~Date() {}
 
@@ -80,13 +80,30 @@ bool Date::operator>=(const Date& rhs) const
 	return (!(*this < rhs));
 }
 
+std::ostream& operator<<(std::ostream& os, const Date& date)
+{
+	os << date.year() << '-';
+	if (date.month() < 10)
+		os << '0';
+	os << date.month() << '-';
+	if (date.day() < 10)
+		os << '0';
+	os << date.day();
+	return (os);
+}
+
+/*************
+* EXCEPTIONS *
+*************/
+Date::Illformed::Illformed(const std::string& msg)
+	: std::runtime_error(msg)
+{};
+
 /**********
 * GETTERS *
 **********/
 const unsigned int& Date::year() const { return (m_year); }
-
 const unsigned int& Date::month() const { return (m_month); }
-
 const unsigned int& Date::day() const { return (m_day); }
 
 /**********
@@ -101,41 +118,42 @@ void Date::set(const std::string& date)
 		tokens.push_back(tok);
 	}
 	if (tokens.size() != 3)
-		throw std::runtime_error("invalid date format");
+		throw Illformed("invalid date format: '" + date + '\'');
 	if (tokens.at(0).size() != 4
 			|| tokens.at(1).size() != 2
 			|| tokens.at(2).size() != 2)
-		throw std::runtime_error("invalid date format");
-	year(to_uint(tokens.at(0)));
-	// DEBUG(m_year);
-	month(to_uint(tokens.at(1)));
-	// DEBUG(m_month);
-	day(to_uint(tokens.at(1)));
-	// DEBUG(m_day);
+		throw Illformed("invalid date format: '" + date + '\'');
+	try {
+		year(to_uint(tokens.at(0)));
+		month(to_uint(tokens.at(1)));
+		day(to_uint(tokens.at(2)));
+	} catch (const Illformed& e) {
+		throw Illformed(std::string(e.what()) + ": '" + date + '\'');
+	}
 }
 
 void Date::year(unsigned int y)
 {
 	if (y < 1582)
-		throw std::runtime_error("date before gregorian calendar adoption!");
+		throw Illformed("date before gregorian calendar adoption!");
 	m_year = y;
 }
 
 void Date::month(unsigned int m)
 {
 	if (m > 12 || m < 1)
-		throw std::runtime_error("invalid month format");
+		throw Illformed("invalid date format");
 	if (m_year == 1582 && m < 10)
-		throw std::runtime_error("date before gregorian calendar adoption!");
+		throw Illformed("date before gregorian calendar adoption!");
 	m_month = m;
 }
 
 void Date::day(unsigned int d)
 {
 	if (d < 1 || d > 31)
-		throw std::runtime_error("invalid day format");
+		throw Illformed("invalid day format");
 	if (m_year == 1582 && m_month == 10 && d < 15)
-		throw std::runtime_error("date before gregorian calendar adoption!");
+		throw Illformed("date before gregorian calendar adoption!");
 	unsigned int day_nbr = 0;
 	switch (m_month) {
 		case 2:
@@ -154,10 +172,25 @@ void Date::day(unsigned int d)
 			break;
 	}
 	if (d > day_nbr)
-		throw std::runtime_error("invalid day format (check leap years)");
+		throw Illformed("invalid day format");
 	m_day = d;
 }
 
 /**********
 * METHODS *
 **********/
+unsigned int Date::to_uint(const std::string& str)
+{
+	if (str.at(0) == '-')
+		throw Illformed("invalid negative number");
+	char* end = NULL;
+	errno = 0;
+	unsigned long ul = std::strtoul(str.c_str(), &end, 10);
+	if (errno || ul > std::numeric_limits<unsigned int>::max()) {
+		errno = 0;
+		throw Illformed("out of range number");
+	} else if (*end) {
+		throw Illformed("invalid number");
+	}
+	return (static_cast<unsigned int>(ul));
+}

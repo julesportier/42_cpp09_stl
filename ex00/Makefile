@@ -7,24 +7,18 @@ CXX := c++
 #########
 # FLAGS #
 #########
-STD_FLAGS :=	-std=c++98
-WARNINGS :=		-Wall -Werror -Wextra
-CXXFLAGS :=		$(STD_FLAGS) $(WARNINGS)
-CXXFLAGS_DB :=	$(STD_FLAGS) $(WARNINGS) -g3
-# Warns about not defined directive in #if
-CXXFLAGS_DB +=	-Wundef
-CXXFLAGS_DB +=	-Wshadow
-# Warns about ptr arithmetic on functions ptr or void ptr 
-CXXFLAGS_DB +=	-Wpointer-arith
-# Warns about implicit conversion that may alter a value
-CXXFLAGS_DB +=	-Wsign-conversion -Wconversion
-
-CXXFLAGS_NE :=	$(STD_FLAGS) -Wall -Wextra -g3
-CXXFLAGS_AS :=	$(STD_FLAGS) $(WARNINGS) -g3 \
-				-fsanitize=address
-CXXFLAGS_US :=	$(STD_FLAGS) $(WARNINGS) -g3 \
-				-fsanitize=undefined
-DEP_FLAGS := 	-MMD
+STD_FLAGS :=		-std=c++98
+WARNINGS :=			-Wall -Werror -Wextra
+EXTRA_WARNINGS :=	-Wundef -Wshadow -Wpointer-arith -Wsign-conversion -Wconversion
+CXXFLAGS :=			$(STD_FLAGS) $(WARNINGS)
+CXXFLAGS_DB :=		$(STD_FLAGS) $(WARNINGS) $(EXTRA_WARNINGS) -g3
+CXXFLAGS_GDB :=		$(STD_FLAGS) $(WARNINGS) $(EXTRA_WARNINGS) -ggdb
+CXXFLAGS_NE :=		$(STD_FLAGS) -Wall -Wextra -g3
+CXXFLAGS_AS :=		$(STD_FLAGS) $(WARNINGS) $(EXTRA_WARNINGS) -g3 \
+					-fsanitize=address
+CXXFLAGS_US :=		$(STD_FLAGS) $(WARNINGS) $(EXTRA_WARNINGS) -g3 \
+					-fsanitize=undefined
+DEP_FLAGS := 		-MMD
 
 #########
 # FILES #
@@ -34,7 +28,9 @@ NAME := btc
 SRC_DIR := src
 vpath %.cpp $(SRC_DIR)
 SRC := main.cpp \
+	   BitcoinExchange.cpp \
 	   Date.cpp \
+	   DataBase.cpp \
 	   utils.cpp
 
 BUILD_DIR := build
@@ -45,13 +41,18 @@ DEP_FILES := $(OBJ:.o=.d)
 ###########
 # TARGETS #
 ###########
-.PHONY: all clean fclean re dbg noerr asan usan
+.PHONY: all clean fclean re dbg gdb noerr asan usan
 
 all: $(BUILD_DIR) $(NAME)
 
 dbg: CXXFLAGS = $(CXXFLAGS_DB)
 dbg: CXXFLAGS += -DDBG
 dbg: all
+
+gdb: CXXFLAGS = $(CXXFLAGS_GDB)
+gdb: CXX = g++
+gdb: all
+
 noerr: CXXFLAGS = $(CXXFLAGS_NE)
 noerr: all
 

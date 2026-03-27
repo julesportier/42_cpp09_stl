@@ -6,11 +6,6 @@
 void print(const std::string& str);
 void print_except(const std::exception& e);
 
-std::string& trim(std::string& str, const std::string sep = " \t");
-
-unsigned int to_uint(const std::string& str);
-double to_pos_double(const std::string& str);
-
 // Debug variable printing
 template <typename T>
 void debug(const char* file,

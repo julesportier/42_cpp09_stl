@@ -1,6 +1,7 @@
 #ifndef DATE_HPP
 # define DATE_HPP
 
+# include <stdexcept>
 # include <string>
 
 class Date {
@@ -9,6 +10,11 @@ public:
 	Date(const std::string& date);
 	Date(const Date& src);
 	~Date();
+
+	class Illformed : public std::runtime_error {
+	public:
+		Illformed(const std::string& msg);
+	};
 
 	Date& operator=(const Date& src);
 	bool operator==(const Date& rhs) const;
@@ -25,10 +31,14 @@ public:
 	void month(unsigned int m);
 	const unsigned int& day() const;
 	void day(unsigned int d);
+
+	unsigned int to_uint(const std::string& str);
 private:
 	unsigned int m_year;
 	unsigned int m_month;
 	unsigned int m_day;
 };
+
+std::ostream& operator<<(std::ostream& os, const Date& date);
 
 #endif

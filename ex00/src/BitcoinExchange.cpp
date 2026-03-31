@@ -41,24 +41,20 @@ void BitcoinExchange::values(const std::string& filename)
 		throw std::runtime_error("opening input file failed");
 	DataBase::check_header(dates, '|');
 	for (std::string line; std::getline(dates, line); ) {
-		std::pair<Date, double> p;
+		std::pair<Date, double> input;
 		try {
-			p = DataBase::parse_line(line, '|');
+			input = DataBase::parse_line(line, '|');
+			if (input.second > 1000) {
+				print("Error: too large a number");
+				continue;
+			}
+			std::pair<Date, double> db_entry = m_db.at(input.first);
+			std::cout << db_entry.first << " => " << input.second
+				<< " = " << input.second * db_entry.second << '\n';
 		} catch (const DataBase::Illformed& e) {
 			print_except(e);
-			continue ;
-		}
-		if (p.second > 1000) {
-			print("Error: too large a number");
-			continue ;
-		}
-		try {
-			std::pair<Date, double> val = m_db.at(p.first);
-			std::cout << val.first << " => " << p.second
-				<< " = " << p.second * val.second
-				<< '\n';
 		} catch (const DataBase::OutOfRange& e) {
-			std::cout << "Error: " << e.what() << " (" << p.first << ")\n";
+			std::cout << "Error: " << e.what() << " (" << input.first << ")\n";
 		}
 	}
 }

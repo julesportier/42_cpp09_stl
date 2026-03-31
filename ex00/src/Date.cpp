@@ -1,5 +1,4 @@
 #include "Date.hpp"
-#include <vector>
 #include <sstream>
 #include <cstdlib>
 #include <errno.h>
@@ -111,22 +110,25 @@ const unsigned int& Date::day() const { return (m_day); }
 **********/
 void Date::set(const std::string& date)
 {
-	std::vector<std::string> tokens;
 	std::stringstream ss;
 	ss << date;
-	for (std::string tok; std::getline(ss, tok, '-'); ) {
-		tokens.push_back(tok);
-	}
-	if (tokens.size() != 3)
+
+	std::string y;
+	if (!std::getline(ss, y, '-') || y.size() != 4)
 		throw Illformed("invalid date format: '" + date + '\'');
-	if (tokens.at(0).size() != 4
-			|| tokens.at(1).size() != 2
-			|| tokens.at(2).size() != 2)
+
+	std::string m;
+	if (!std::getline(ss, m, '-') || m.size() != 2)
 		throw Illformed("invalid date format: '" + date + '\'');
+
+	std::string d;
+	if (!std::getline(ss, d, '-') || d.size() != 2 || !ss.eof())
+		throw Illformed("invalid date format: '" + date + '\'');
+
 	try {
-		year(to_uint(tokens.at(0)));
-		month(to_uint(tokens.at(1)));
-		day(to_uint(tokens.at(2)));
+		year(to_uint(y));
+		month(to_uint(m));
+		day(to_uint(d));
 	} catch (const Illformed& e) {
 		throw Illformed(std::string(e.what()) + ": '" + date + '\'');
 	}
@@ -190,7 +192,7 @@ unsigned int Date::to_uint(const std::string& str)
 		errno = 0;
 		throw Illformed("out of range number");
 	} else if (*end) {
-		throw Illformed("invalid number");
+		throw Illformed("unexpected character in number");
 	}
 	return (static_cast<unsigned int>(ul));
 }

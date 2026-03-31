@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include <fstream>
 #include <sstream>
-#include <vector>
 
 /**************************
 * CONSTRUCTORS/DESTRUCTOR *
@@ -93,20 +92,17 @@ std::pair<Date, double> DataBase::parse_line(
 	if (!line_s.good())
 		throw std::runtime_error("reading database failed");
 
-	std::vector<std::string> tokens;
-	for (std::string tok; std::getline(line_s, tok, sep); ) {
-		tokens.push_back(tok);
-	}
-	if (tokens.size() != 2)
+	std::string d;
+	if (!std::getline(line_s, d, sep))
+		throw Illformed("invalid columns number in database");
+
+	std::string v;
+	if (!std::getline(line_s, v, sep) || !line_s.eof())
 		throw Illformed("invalid columns number in database");
 
 	try {
-		const std::string d = trim(tokens[0], ' ');
-		const Date date(d);
-
-		const std::string v = trim(tokens[1], ' ');
-		const double value = to_pos_double(v);
-
+		const Date date(trim(d, ' '));
+		const double value = to_pos_double(trim(v, ' '));
 		return(std::pair<Date, double>(date, value));
 	} catch (const Date::Illformed& e) {
 		throw Illformed(e.what());
@@ -155,7 +151,7 @@ double DataBase::to_pos_double(const std::string& str)
 	} else if (d < 0) {
 		throw Illformed("negative number");
 	} else if (*end) {
-		throw Illformed("invalid number");
+		throw Illformed("unexpected character in number");
 	}
 	return (d);
 }

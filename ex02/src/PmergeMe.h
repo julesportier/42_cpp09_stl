@@ -14,8 +14,7 @@ public:
 	~PmergeMe();
 	PmergeMe& operator=(const PmergeMe& src);
 
-	list_t merge(list_t& left, list_t& right);
-	list_t merge_sort(list_t list);
+	void merge_insert_sort_l(list_t::size_type block_size);
 
 	const list_t& list() const;
 	void list(list_t new_list);

@@ -48,6 +48,7 @@ dbg: CXXFLAGS += -DDBG
 dbg: all
 
 gdb: CXXFLAGS = $(CXXFLAGS_GDB)
+gdb: CXXFLAGS += -DDBG
 gdb: CXX = g++
 gdb: all
 

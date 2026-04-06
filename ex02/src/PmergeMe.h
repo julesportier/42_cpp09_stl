@@ -28,6 +28,7 @@ private:
 	block_t get_block(
 				list_t::iterator& it,
 				list_t::size_type block_size) const;
+	unsigned int jacobsthal_diff(unsigned int i) const;
 };
 
 std::ostream& operator<<(std::ostream& os, const PmergeMe& rhs);

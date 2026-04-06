@@ -39,6 +39,25 @@ PmergeMe& PmergeMe::operator=(const PmergeMe& src)
 /**********
 * METHODS *
 **********/
+// From 0 -> 0, 1, 1, 3...
+unsigned int PmergeMe::jacobsthal_diff(unsigned int i) const
+{
+	if (i == 0)
+		return (0);
+	if (i > 33) {
+		throw std::runtime_error(
+			"can't compute Jacobsthal bigger than 33rd into an unsigned int");
+	}
+	unsigned int j = 1;
+	unsigned int j_prev = 0;
+	while (--i > 0) {
+		unsigned int tmp = j;
+		j += j_prev * 2;
+		j_prev = tmp;
+	}
+	return (j - j_prev);
+}
+
 // Advance the iterator given as argument past the last element of the block.
 PmergeMe::block_t PmergeMe::get_block(
 					list_t::iterator& it,

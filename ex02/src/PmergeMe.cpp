@@ -39,6 +39,21 @@ PmergeMe& PmergeMe::operator=(const PmergeMe& src)
 /**********
 * METHODS *
 **********/
+// Advance the iterator given as argument past the last element of the block.
+PmergeMe::block_t PmergeMe::get_block(
+					list_t::iterator& it,
+					list_t::size_type block_size) const
+{
+	block_t block;
+
+	block.begin = it;
+	std::advance(it, block_size - 1);
+	block.last = it;
+	std::advance(it, 1);
+
+	return (block);
+}
+
 void PmergeMe::merge_insert_sort_l(list_t::size_type block_size)
 {
 	// DEBUG(block_size);
@@ -54,23 +69,14 @@ void PmergeMe::merge_insert_sort_l(list_t::size_type block_size)
 		// DEBUG(m_list);
 		// DEBUG(std::distance(it, m_list.end()));
 
-		// Iterators from the first block.
-		const list_t::iterator f = it;
-		std::advance(it, block_size - 1);
-		const list_t::iterator f_last = it;
-		std::advance(it, 1);
-
-		// Iterators from the second block.
-		const list_t::iterator s = it;
-		std::advance(it, block_size - 1);
-		const list_t::iterator s_last = it;
-		std::advance(it, 1);
+		block_t first = get_block(it, block_size);
+		block_t second = get_block(it, block_size);
 
 		// Swap blocks.
-		if (*f_last > *s_last) {
+		if (*first.last > *second.last) {
 			DEBUG("swap");
 			DEBUG(m_list);
-			m_list.splice(f, m_list, s, it);
+			m_list.splice(first.begin, m_list, second.begin, it);
 			DEBUG(m_list);
 		}
 	}

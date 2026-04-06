@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 	try {
 		PmergeMe list(argv + 1);
 		std::cout << "Before: " << list << '\n';
-		list.merge_insert_sort_l(1);
+		list.merge_insert_sort_l();
 		std::cout << "After: " << list << '\n';
 
 		// PmergeMe sorter;

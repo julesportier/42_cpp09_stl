@@ -11,6 +11,14 @@ public:
 		list_t::iterator begin;
 		list_t::iterator last;
 	};
+	class List : public list_t {
+	public:
+		List();
+		List(const List& src);
+		List& operator=(const List& src);
+		~List();
+		List::iterator at(unsigned int i);
+	};
 
 	PmergeMe();
 	PmergeMe(char** argv);
@@ -18,17 +26,20 @@ public:
 	~PmergeMe();
 	PmergeMe& operator=(const PmergeMe& src);
 
-	void merge_insert_sort_l(list_t::size_type block_size);
+	void merge_insert_sort_l();
 
 	const list_t& list() const;
 	void list(list_t new_list);
 private:
 	list_t m_list;
+	list_t::size_type m_block_size;
 	unsigned int to_uint(const char* str) const;
-	block_t get_block(
-				list_t::iterator& it,
-				list_t::size_type block_size) const;
+	block_t get_block(list_t::iterator& it, list_t& list) const;
 	unsigned int jacobsthal_diff(unsigned int i) const;
+	PmergeMe::list_t::iterator binary_search(
+								const list_t::iterator& p_it,
+								const list_t::size_type& size);
+	void binary_insert(list_t pend);
 };
 
 std::ostream& operator<<(std::ostream& os, const PmergeMe& rhs);

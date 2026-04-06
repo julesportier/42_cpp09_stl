@@ -1,5 +1,4 @@
 #include "PmergeMe.h"
-#include "utils.h"
 #include <limits>
 #include <stdexcept>
 #include <cstdlib>
@@ -8,15 +7,43 @@
 /********
 * TYPES *
 ********/
+PmergeMe::List::List() : std::list<unsigned int>() {};
+
+PmergeMe::List::List(const List& src) : std::list<unsigned int>(src) {};
+
+PmergeMe::List& PmergeMe::List::operator=(const List& src)
+{
+	if (&src != this) {
+		*this = src;
+	}
+	return (*this);
+}
+
+PmergeMe::List::~List() {};
+
+PmergeMe::List::iterator PmergeMe::List::at(unsigned int i)
+{
+	List::iterator it = begin();
+	if (i == size()) 
+		throw std::out_of_range("can't get end iterator");
+	if (i > size()) 
+		throw std::out_of_range("can't get iterator out of list size");
+	std::advance(it, i);
+	return (it);
+}
 
 /**************************
 * CONSTRUCTORS/DESTRUCTOR *
 **************************/
-PmergeMe::PmergeMe() {}
+PmergeMe::PmergeMe() : m_block_size(1) {};
 
-PmergeMe::PmergeMe(const PmergeMe& src) : m_list(src.m_list) {}
+PmergeMe::PmergeMe(const PmergeMe& src)
+	: m_list(src.m_list)
+	, m_block_size(src.m_block_size)
+{}
 
 PmergeMe::PmergeMe(char** argv)
+	: m_block_size(1)
 {
 	if (argv == NULL)
 		throw std::runtime_error("ctor with c array arg cannot be NULL");
@@ -32,6 +59,7 @@ PmergeMe& PmergeMe::operator=(const PmergeMe& src)
 {
 	if (&src != this) {
 		m_list = src.m_list;
+		m_block_size = src.m_block_size;
 	}
 	return (*this);
 }
@@ -58,51 +86,132 @@ unsigned int PmergeMe::jacobsthal_diff(unsigned int i) const
 	return (j - j_prev);
 }
 
+PmergeMe::list_t::iterator PmergeMe::binary_search(
+							const list_t::iterator& p_it,
+							const list_t::size_type& size)
+{
+	list_t::iterator m_it = m_list.begin();
+	list_t::size_type inter = size / 2 + size % 2;
+	std::advance(m_it, inter * m_block_size - 1);
+
+	list_t::const_iterator low = m_list.end();
+	list_t::const_iterator high = m_list.end();
+
+	while (1) {
+		if (*p_it == *m_it || m_it == high) {
+			return (m_it);
+		} else if (m_it == low) {
+			std::advance(m_it, m_block_size);
+			return (m_it);
+		} else if (*p_it < *m_it) {
+			if (m_it == m_list.begin())
+				return (m_it);
+			high = m_it;
+			inter = inter / 2 + inter % 2;
+			std::advance(m_it, -inter * m_block_size);
+		} else {
+			low = m_it;
+			inter = inter / 2 + inter % 2;
+			std::advance(m_it, inter * m_block_size);
+		}
+	}
+	return m_it;
+}
+
+// "pend" must be non empty.
+void PmergeMe::binary_insert(list_t pend)
+{
+	list_t::size_type size = 4;
+	unsigned int n_jacob = 3;
+	while (pend.size() > 0) {
+		unsigned int p_index = jacobsthal_diff(n_jacob);
+		if (pend.size() / m_block_size < p_index)
+			p_index = pend.size() / m_block_size;
+		while (p_index > 0) {
+			list_t::iterator pend_it = pend.begin();
+			std::advance(pend_it, --p_index * m_block_size);
+			block_t block = get_block(pend_it, pend);
+			list_t::iterator main_insert_pos = binary_search(block.last, size - 1);
+			if (main_insert_pos != m_list.end())
+				std::advance(main_insert_pos, -(m_block_size - 1));
+			m_list.splice(main_insert_pos, pend, block.begin, ++block.last);
+		}
+		size *= 2;
+		++n_jacob;
+	}
+}
+
 // Advance the iterator given as argument past the last element of the block.
 PmergeMe::block_t PmergeMe::get_block(
 					list_t::iterator& it,
-					list_t::size_type block_size) const
+					list_t& list) const
 {
 	block_t block;
 
+	if (static_cast<unsigned long>(std::distance(it, list.end())) < m_block_size)
+		throw std::out_of_range("list too small for block size");
 	block.begin = it;
-	std::advance(it, block_size - 1);
+	std::advance(it, m_block_size - 1);
 	block.last = it;
 	std::advance(it, 1);
 
 	return (block);
 }
 
-void PmergeMe::merge_insert_sort_l(list_t::size_type block_size)
+void PmergeMe::merge_insert_sort_l()
 {
-	// DEBUG(block_size);
-	if (m_list.size() < block_size * 2)
+	if (m_list.size() < m_block_size * 2)
 		return;
 
 	// Sort pairs between each other.
 	list_t::iterator it = m_list.begin();
 	while (it != m_list.end() 
 			&& static_cast<unsigned long>(std::distance(it, m_list.end()))
-				>= block_size * 2) {
-		// DEBUG(*it);
-		// DEBUG(m_list);
-		// DEBUG(std::distance(it, m_list.end()));
-
-		block_t first = get_block(it, block_size);
-		block_t second = get_block(it, block_size);
+				>= m_block_size * 2) {
+		// Advance the iterator after the end of the block
+		block_t first = get_block(it, m_list);
+		block_t second = get_block(it, m_list);
 
 		// Swap blocks.
 		if (*first.last > *second.last) {
-			DEBUG("swap");
-			DEBUG(m_list);
 			m_list.splice(first.begin, m_list, second.begin, it);
-			DEBUG(m_list);
 		}
 	}
+	m_block_size *= 2;
+	merge_insert_sort_l();
+	m_block_size /= 2;
 
-	merge_insert_sort_l(block_size * 2);
+	// Put the little pairs into the pend list to prepare insertion.
+	// The remaining elements are temporary put into the extra list.
+	list_t pend;
+	list_t extra;
+	it = m_list.begin();
+	while (it != m_list.end() 
+			&& static_cast<unsigned long>(std::distance(it, m_list.end()))
+				>= m_block_size) {
+		block_t first = get_block(it, m_list);
+		pend.splice(pend.end(), m_list, first.begin, it);
+		if (static_cast<unsigned long>(std::distance(it, m_list.end())) < m_block_size)
+			break;
+		else
+			std::advance(it, m_block_size);
+	}
+	if (it != m_list.end())
+		extra.splice(extra.end(), m_list, it, m_list.end());
 
-	// Binary insert.
+	// First element on pend always go to the beggining of main (m_list).
+	list_t::iterator pend_it = pend.begin();
+	block_t first = get_block(pend_it, pend);
+	m_list.splice(m_list.begin(), pend, first.begin, pend_it);
+
+	if (pend.size() > 0)
+		binary_insert(pend);
+
+	// Insert extra at the end of main.
+	m_list.splice(m_list.end(), extra);
+
+
+
 	/****************************************************************************************************************************
 	 * - put one block out of two in a "pend" list
 	 * - put remaining nodes (not in a full block or a pair) into a "extra(neous)" list
@@ -111,7 +220,7 @@ void PmergeMe::merge_insert_sort_l(list_t::size_type block_size)
 	 * 		- decrement i until nothing left before
 	 * 		- n = n * 2
 	 * 		- i = J+1
-	 * - if extra size >= block_size:
+	 * - if extra size >= m_block_size:
 	 *   	binary insert first extra block (if block == 2 and extra size == 3 only insert 2 firsts)
 	 * - if remaining in extra:
 	 *   	append "extra" at the end of "main"

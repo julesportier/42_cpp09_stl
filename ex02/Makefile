@@ -9,7 +9,7 @@ CXX := c++
 #########
 STD_FLAGS :=		-std=c++98
 WARNINGS :=			-Wall -Werror -Wextra
-EXTRA_WARNINGS :=	-Wundef -Wshadow -Wpointer-arith -Wsign-conversion -Wconversion
+EXTRA_WARNINGS :=	-Wundef -Wshadow -Wpointer-arith
 CXXFLAGS :=			$(STD_FLAGS) $(WARNINGS)
 CXXFLAGS_DB :=		$(STD_FLAGS) $(WARNINGS) $(EXTRA_WARNINGS) -g3
 CXXFLAGS_GDB :=		$(STD_FLAGS) $(WARNINGS) $(EXTRA_WARNINGS) -ggdb

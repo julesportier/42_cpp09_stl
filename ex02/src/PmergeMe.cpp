@@ -49,7 +49,7 @@ void PmergeMe::merge_insert_sort_l(list_t::size_type block_size)
 	list_t::iterator it = m_list.begin();
 	while (it != m_list.end() 
 			&& static_cast<unsigned long>(std::distance(it, m_list.end()))
-				> block_size * 2) {
+				>= block_size * 2) {
 		// DEBUG(*it);
 		// DEBUG(m_list);
 		// DEBUG(std::distance(it, m_list.end()));

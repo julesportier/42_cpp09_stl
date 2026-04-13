@@ -4,34 +4,6 @@
 #include <cstdlib>
 #include <errno.h>
 
-/********
-* TYPES *
-********/
-PmergeMe::List::List() : std::list<unsigned int>() {};
-
-PmergeMe::List::List(const List& src) : std::list<unsigned int>(src) {};
-
-PmergeMe::List& PmergeMe::List::operator=(const List& src)
-{
-	if (&src != this) {
-		*this = src;
-	}
-	return (*this);
-}
-
-PmergeMe::List::~List() {};
-
-PmergeMe::List::iterator PmergeMe::List::at(unsigned int i)
-{
-	List::iterator it = begin();
-	if (i == size()) 
-		throw std::out_of_range("can't get end iterator");
-	if (i > size()) 
-		throw std::out_of_range("can't get iterator out of list size");
-	std::advance(it, i);
-	return (it);
-}
-
 /**************************
 * CONSTRUCTORS/DESTRUCTOR *
 **************************/
@@ -68,6 +40,7 @@ PmergeMe& PmergeMe::operator=(const PmergeMe& src)
 * METHODS *
 **********/
 // From 0 -> 0, 1, 1, 3...
+// Return the difference between Jn and Jn-1.
 unsigned int PmergeMe::jacobsthal_diff(unsigned int i) const
 {
 	if (i == 0)
@@ -158,12 +131,9 @@ PmergeMe::block_t PmergeMe::get_block(
 	return (block);
 }
 
-void PmergeMe::merge_insert_sort_l()
+// Sort pairs between each other.
+void PmergeMe::sort_pairs()
 {
-	if (m_list.size() < m_block_size * 2)
-		return;
-
-	// Sort pairs between each other.
 	list_t::iterator it = m_list.begin();
 	while (it != m_list.end() 
 			&& static_cast<unsigned long>(std::distance(it, m_list.end()))
@@ -177,15 +147,13 @@ void PmergeMe::merge_insert_sort_l()
 			m_list.splice(first.begin, m_list, second.begin, it);
 		}
 	}
-	m_block_size *= 2;
-	merge_insert_sort_l();
-	m_block_size /= 2;
+}
 
-	// Put the little pairs into the pend list to prepare insertion.
-	// The remaining elements are temporary put into the extra list.
-	list_t pend;
-	list_t extra;
-	it = m_list.begin();
+// Put the little pairs into the pend list to prepare insertion.
+// The remaining elements are temporary put into the extra list.
+void PmergeMe::split_pairs(list_t& pend, list_t& extra)
+{
+	list_t::iterator it = m_list.begin();
 	while (it != m_list.end() 
 			&& static_cast<unsigned long>(std::distance(it, m_list.end()))
 				>= m_block_size) {
@@ -198,6 +166,22 @@ void PmergeMe::merge_insert_sort_l()
 	}
 	if (it != m_list.end())
 		extra.splice(extra.end(), m_list, it, m_list.end());
+}
+
+void PmergeMe::merge_insert_sort_l()
+{
+	if (m_list.size() < m_block_size * 2)
+		return;
+
+	sort_pairs();
+
+	m_block_size *= 2;
+	merge_insert_sort_l();
+	m_block_size /= 2;
+
+	list_t pend;
+	list_t extra;
+	split_pairs(pend, extra);
 
 	// First element on pend always go to the beggining of main (m_list).
 	list_t::iterator pend_it = pend.begin();
@@ -209,49 +193,6 @@ void PmergeMe::merge_insert_sort_l()
 
 	// Insert extra at the end of main.
 	m_list.splice(m_list.end(), extra);
-
-
-
-	/****************************************************************************************************************************
-	 * - put one block out of two in a "pend" list
-	 * - put remaining nodes (not in a full block or a pair) into a "extra(neous)" list
-	 * - put first from "pend" before first pos in "main" as we know it's smaller than it
-	 * - starting at i = J4 == 3 put i firsts from "pend" before n - 1 "main" pos (n start = 4)
-	 * 		- decrement i until nothing left before
-	 * 		- n = n * 2
-	 * 		- i = J+1
-	 * - if extra size >= m_block_size:
-	 *   	binary insert first extra block (if block == 2 and extra size == 3 only insert 2 firsts)
-	 * - if remaining in extra:
-	 *   	append "extra" at the end of "main"
-	 * - Do it at every unrolling of the recursion
-	 * 
-	 * 
-	 * Jacobsthal : 0 1 1 3 5 11 21 43 85 ...
-	 * 1  2 .3. 4 .5. 6  7  8  9  10  11
-	 * 1b 2b 3b 4b 5b 6b 7b 8b 9b 10b 11b
-	 *
-	 *    2b 3b 4b 5b 6b 7b 8b 9b 10b 11b -> J 3 (without cmp)
-	 * 1b 1 2 .3. 4 .5. 6  7  8  9  10  11
-	 *
-	 *    	2b    4b 5b 6b 7b 8b 9b 10b 11b -> J 4 == 3 (with cmp). We just compare with the first 3. From 3b.
-	 * 1b 3b 1 2 .3. 4 .5. 6  7  8  9  10  11
-	 *    	         4b 5b 6b 7b 8b 9b 10b 11b -> 3 - 1 > 1 ok. From 2b in 3 little. Stop after as 1 is preceding Jacob number.
-	 * 1b 3b 1 2b 2 .3. 4 .5. 6  7  8  9  10  11
-	 *
-	 *    	            4b    6b 7b 8b 9b 10b 11b -> J 6 == 5. We just compare with the first 7. From 5b in 7 little.
-	 * 1b 3b 1 2b 2 5b .3. 4 .5. 6  7  8  9  10  11
-	 *    	                     6b 7b 8b 9b 10b 11b -> 5 - 1 > 3 ok. From 4b in 7 little. Stop after as 3 is preceding Jacob number.
-	 * 1b 3b 1 2b 4b 2 5b .3. 4 .5. 6  7  8  9  10  11
-	 *
-	 *    	                        6b 7b 8b 9b 10b     -> J 7 == 11. We just compare with the first 15. From 11b in 15 little.
-	 * 1b 3b 1 2b 4b 2 5b .3. 4 .5. 6 11b 7  8  9  10  11
-	 *    	                        6b 7b 8b 9b             -> 11 - 1 == 10 > 7 ok. From 10b in 15 little.
-	 * 1b 3b 1 2b 4b 2 5b .3. 4 10b .5. 6 11b 7  8  9  10  11
-	 *    	                            6b 7b 8b               -> 10 - 1 == 9 > 7 ok. From 9b in 15 little.
-	 * 1b 3b 1 2b 9b 4b 2 5b .3. 4 10b .5. 6 11b 7  8  9  10  11
-	 *    	                               6b 7b 8b            -> 9 - 1 == 8 > 7 ok. From 9b in 15 little.
-	 *********************************************************************************************************************/
 }
 
 unsigned int PmergeMe::to_uint(const char* str) const

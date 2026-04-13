@@ -11,14 +11,6 @@ public:
 		list_t::iterator begin;
 		list_t::iterator last;
 	};
-	class List : public list_t {
-	public:
-		List();
-		List(const List& src);
-		List& operator=(const List& src);
-		~List();
-		List::iterator at(unsigned int i);
-	};
 
 	PmergeMe();
 	PmergeMe(char** argv);
@@ -34,6 +26,8 @@ private:
 	list_t m_list;
 	list_t::size_type m_block_size;
 	unsigned int to_uint(const char* str) const;
+	void sort_pairs();
+	void split_pairs(list_t& pend, list_t& extra);
 	block_t get_block(list_t::iterator& it, list_t& list) const;
 	unsigned int jacobsthal_diff(unsigned int i) const;
 	PmergeMe::list_t::iterator binary_search(

@@ -22,6 +22,7 @@ public:
 
 	const list_t& list() const;
 	void list(list_t new_list);
+	static size_t size(list_t& list);
 private:
 	list_t m_list;
 	list_t::size_type m_block_size;
@@ -29,6 +30,7 @@ private:
 	void sort_pairs();
 	void split_pairs(list_t& pend, list_t& extra);
 	block_t get_block(list_t::iterator& it, list_t& list) const;
+	list_t::iterator to_block_first_node(const list_t::iterator& mid_it);
 	unsigned int jacobsthal_diff(unsigned int i) const;
 	PmergeMe::list_t::iterator binary_search(
 								const list_t::iterator& p_it,

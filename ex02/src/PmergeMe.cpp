@@ -59,36 +59,46 @@ unsigned int PmergeMe::jacobsthal_diff(unsigned int i) const
 	return (j - j_prev);
 }
 
+
+PmergeMe::list_t::iterator PmergeMe::to_block_first_node(const list_t::iterator& mid_it)
+{
+	list_t::iterator it = mid_it;
+	if (it == m_list.end()) {
+		return (it);
+	} else {
+		std::advance(it, -(m_block_size - 1));
+		return (it);
+	}
+}
+
 PmergeMe::list_t::iterator PmergeMe::binary_search(
-							const list_t::iterator& p_it,
+							const list_t::iterator& target_it,
 							const list_t::size_type& size)
 {
-	list_t::iterator m_it = m_list.begin();
-	list_t::size_type inter = size / 2 + size % 2;
-	std::advance(m_it, inter * m_block_size - 1);
-
-	list_t::const_iterator low = m_list.end();
-	list_t::const_iterator high = m_list.end();
-
-	while (1) {
-		if (*p_it == *m_it || m_it == high) {
-			return (m_it);
-		} else if (m_it == low) {
-			std::advance(m_it, m_block_size);
-			return (m_it);
-		} else if (*p_it < *m_it) {
-			if (m_it == m_list.begin())
-				return (m_it);
-			high = m_it;
-			inter = inter / 2 + inter % 2;
-			std::advance(m_it, -inter * m_block_size);
+	unsigned int low = 0;
+	const size_t main_size = PmergeMe::size(m_list) / m_block_size;
+	unsigned int high = (main_size > size ? size - 1 : main_size - 1);
+	list_t::iterator mid_it;
+	while (low < high) {
+		const unsigned int mid = low + (high - low) / 2;
+		mid_it = m_list.begin();
+		std::advance(mid_it, mid * m_block_size + m_block_size - 1);
+		if (*mid_it == *target_it) {
+			return (to_block_first_node(mid_it));
+		} else if (*mid_it < *target_it) {
+			low = (mid < size ? mid + 1 : size - 1);
 		} else {
-			low = m_it;
-			inter = inter / 2 + inter % 2;
-			std::advance(m_it, inter * m_block_size);
+			high = (mid > 0 ? mid - 1 : 0);
 		}
 	}
-	return m_it;
+	mid_it = m_list.begin();
+	std::advance(mid_it, low * m_block_size + m_block_size - 1);
+	if (*mid_it > *target_it) {
+		std::advance(mid_it, -(m_block_size - 1));
+	} else {
+		++mid_it;
+	}
+	return (mid_it);
 }
 
 // "pend" must be non empty.
@@ -96,17 +106,15 @@ void PmergeMe::binary_insert(list_t pend)
 {
 	list_t::size_type size = 4;
 	unsigned int n_jacob = 3;
-	while (pend.size() > 0) {
+	while (PmergeMe::size(pend) > 0) {
 		unsigned int p_index = jacobsthal_diff(n_jacob);
-		if (pend.size() / m_block_size < p_index)
-			p_index = pend.size() / m_block_size;
+		if (PmergeMe::size(pend) / m_block_size < p_index)
+			p_index = PmergeMe::size(pend) / m_block_size;
 		while (p_index > 0) {
 			list_t::iterator pend_it = pend.begin();
 			std::advance(pend_it, --p_index * m_block_size);
 			block_t block = get_block(pend_it, pend);
 			list_t::iterator main_insert_pos = binary_search(block.last, size - 1);
-			if (main_insert_pos != m_list.end())
-				std::advance(main_insert_pos, -(m_block_size - 1));
 			m_list.splice(main_insert_pos, pend, block.begin, ++block.last);
 		}
 		size *= 2;
@@ -156,7 +164,7 @@ void PmergeMe::split_pairs(list_t& pend, list_t& extra)
 	list_t::iterator it = m_list.begin();
 	while (it != m_list.end() 
 			&& static_cast<unsigned long>(std::distance(it, m_list.end()))
-				>= m_block_size) {
+				>= m_block_size * 2) {
 		block_t first = get_block(it, m_list);
 		pend.splice(pend.end(), m_list, first.begin, it);
 		if (static_cast<unsigned long>(std::distance(it, m_list.end())) < m_block_size)
@@ -170,7 +178,7 @@ void PmergeMe::split_pairs(list_t& pend, list_t& extra)
 
 void PmergeMe::merge_insert_sort_l()
 {
-	if (m_list.size() < m_block_size * 2)
+	if (size(m_list) < m_block_size * 2)
 		return;
 
 	sort_pairs();
@@ -188,11 +196,19 @@ void PmergeMe::merge_insert_sort_l()
 	block_t first = get_block(pend_it, pend);
 	m_list.splice(m_list.begin(), pend, first.begin, pend_it);
 
-	if (pend.size() > 0)
+	if (size(pend) > 0)
 		binary_insert(pend);
 
 	// Insert extra at the end of main.
-	m_list.splice(m_list.end(), extra);
+	if (extra.size() >= m_block_size) {
+		list_t::iterator extra_it = extra.begin();
+		block_t block = get_block(extra_it, extra);
+		list_t::iterator main_insert_pos
+			= binary_search(block.last, size(m_list) / m_block_size);
+		m_list.splice(main_insert_pos, pend, block.begin, ++block.last);
+	}
+	if (extra.size() > 0)
+		m_list.splice(m_list.end(), extra);
 }
 
 unsigned int PmergeMe::to_uint(const char* str) const
@@ -237,3 +253,11 @@ void PmergeMe::list(list_t new_list) { m_list = new_list; }
 * GETTERS *
 **********/
 const PmergeMe::list_t& PmergeMe::list() const { return (m_list); }
+
+size_t PmergeMe::size(list_t& list)
+{
+	size_t s = 0;
+	for (list_t::iterator it = list.begin(); it != list.end(); ++it)
+		++s;
+	return (s);
+}

@@ -10,7 +10,7 @@ MAKE() {
 	QUIET make "${@}" -j$(nproc)
 }
 ERROR() {
-	echo -e "\033[0;31m${@}\033[0m" > 2
+	echo -e "\033[0;31m${@}\033[0m" >&2
 }
 SUCCESS() {
 	echo -e "\033[0;32m${@}\033[0m"
@@ -23,7 +23,7 @@ while getopts ":mu" opt; do
 	case $opt in
 		m) MEMORY="true";;
 		u) USAN="true";;
-		\?) echo "Error: invalid option" > 2; exit 1;;
+		\?) echo "Error: invalid option" >&2; exit 1;;
 	esac
 done
 
@@ -59,9 +59,8 @@ for i in "${test_cases[@]}"; do
 	ret=$(./PmergeMe $i)
 	echo -e "${ret}"
 	# Check if the returned value is actually sorted.
-	res=$(echo -e "${ret}" | grep "After" | sed 's/After:\s\+//')
-	echo -e "${res}" | tr ' ' '\n' | sort -g -C || (ERROR "not sorted"
-	echo && sucess=1)
+	res=$(echo -e "${ret}" | grep "After" | sed 's/After:\s\+//' | tr ' ' '\n')
+	echo "${res}" | sort --general-numeric-sort --check || success=1
 done
 if [[ "${success}" == 0 ]]; then
 	SUCCESS "[ok]"

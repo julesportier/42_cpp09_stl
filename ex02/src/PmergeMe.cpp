@@ -244,8 +244,6 @@ unsigned int PmergeMe::to_uint(const char* str) const
 /**********
 * SETTERS *
 **********/
-void PmergeMe::list(list_t new_list) { m_list = new_list; }
-
 void PmergeMe::argv(char** argv) { m_argv = argv; }
 
 /**********

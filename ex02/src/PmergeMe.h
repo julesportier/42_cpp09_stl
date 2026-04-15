@@ -24,7 +24,6 @@ public:
 	void merge_insert_sort_l_impl();
 
 	const list_t& list() const;
-	void list(list_t new_list);
 	static size_t size(list_t& list);
 	size_t size();
 	char** argv() const;

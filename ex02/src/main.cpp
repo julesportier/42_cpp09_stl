@@ -20,6 +20,13 @@ int main(int argc, char *argv[])
 		std::cout << "Time to process a range of " << merge_insert.size()
 			<< " elements with std::list : " << list_time << " us\n";
 
+		const std::clock_t deque_start = std::clock();
+		merge_insert.merge_insert_sort_d();
+		const std::clock_t deque_end = std::clock();
+		const std::clock_t deque_time = deque_end - deque_start;
+		// std::cout << "After:  " << merge_insert.deque() << '\n';
+		std::cout << "Time to process a range of " << merge_insert.size()
+			<< " elements with std::deque : " << deque_time << " us\n";
 	} catch (const std::exception& e) {
 		print_except(e);
 		return (-1);

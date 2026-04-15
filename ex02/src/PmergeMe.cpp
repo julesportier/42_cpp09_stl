@@ -116,7 +116,7 @@ void PmergeMe::binary_insert(list_t pend)
 		while (p_index > 0) {
 			list_t::iterator pend_it = pend.begin();
 			std::advance(pend_it, --p_index * m_block_size);
-			block_t block = get_block(pend_it, pend);
+			block_l_t block = get_block(pend_it, pend);
 			list_t::iterator main_insert_pos = binary_search(block.last, size - 1);
 			m_list.splice(main_insert_pos, pend, block.begin, ++block.last);
 		}
@@ -126,11 +126,11 @@ void PmergeMe::binary_insert(list_t pend)
 }
 
 // Advance the iterator given as argument past the last element of the block.
-PmergeMe::block_t PmergeMe::get_block(
+PmergeMe::block_l_t PmergeMe::get_block(
 					list_t::iterator& it,
 					list_t& list) const
 {
-	block_t block;
+	block_l_t block;
 
 	if (static_cast<unsigned long>(std::distance(it, list.end())) < m_block_size)
 		throw std::out_of_range("list too small for block size");
@@ -143,15 +143,15 @@ PmergeMe::block_t PmergeMe::get_block(
 }
 
 // Sort pairs between each other.
-void PmergeMe::sort_pairs()
+void PmergeMe::sort_pairs_l()
 {
 	list_t::iterator it = m_list.begin();
 	while (it != m_list.end() 
 			&& static_cast<unsigned long>(std::distance(it, m_list.end()))
 				>= m_block_size * 2) {
 		// Advance the iterator after the end of the block
-		block_t first = get_block(it, m_list);
-		block_t second = get_block(it, m_list);
+		block_l_t first = get_block(it, m_list);
+		block_l_t second = get_block(it, m_list);
 
 		// Swap blocks.
 		if (*first.last > *second.last) {
@@ -168,7 +168,7 @@ void PmergeMe::split_pairs(list_t& pend, list_t& extra)
 	while (it != m_list.end() 
 			&& static_cast<unsigned long>(std::distance(it, m_list.end()))
 				>= m_block_size * 2) {
-		block_t first = get_block(it, m_list);
+		block_l_t first = get_block(it, m_list);
 		pend.splice(pend.end(), m_list, first.begin, it);
 		if (static_cast<unsigned long>(std::distance(it, m_list.end())) < m_block_size)
 			break;
@@ -193,7 +193,7 @@ void PmergeMe::merge_insert_sort_l_impl()
 	if (size(m_list) < m_block_size * 2)
 		return;
 
-	sort_pairs();
+	sort_pairs_l();
 
 	m_block_size *= 2;
 	merge_insert_sort_l_impl();
@@ -205,7 +205,7 @@ void PmergeMe::merge_insert_sort_l_impl()
 
 	// First element on pend always go to the beggining of main (m_list).
 	list_t::iterator pend_it = pend.begin();
-	block_t first = get_block(pend_it, pend);
+	block_l_t first = get_block(pend_it, pend);
 	m_list.splice(m_list.begin(), pend, first.begin, pend_it);
 
 	if (size(pend) > 0)
@@ -214,13 +214,216 @@ void PmergeMe::merge_insert_sort_l_impl()
 	// Insert extra at the end of main.
 	if (size(extra) >= m_block_size) {
 		list_t::iterator extra_it = extra.begin();
-		block_t block = get_block(extra_it, extra);
+		block_l_t block = get_block(extra_it, extra);
 		list_t::iterator main_insert_pos
 			= binary_search(block.last, size(m_list) / m_block_size);
 		m_list.splice(main_insert_pos, pend, block.begin, ++block.last);
 	}
 	if (size(extra) > 0)
 		m_list.splice(m_list.end(), extra);
+}
+
+void PmergeMe::merge_insert_sort_d()
+{
+	for (deque_t::size_type i = 0; m_argv[i] != NULL; ++i) {
+		const unsigned int tmp = to_uint(m_argv[i]);
+		m_deque.push_back(tmp);
+	}
+	merge_insert_sort_d_impl();
+}
+
+void PmergeMe::merge_insert_sort_d_impl()
+{
+	if (m_deque.size() < m_block_size * 2)
+		return;
+
+	sort_pairs_d();
+
+	m_block_size *= 2;
+	merge_insert_sort_d_impl();
+	m_block_size /= 2;
+
+
+	deque_t pend;
+	deque_t extra;
+	split_pairs(pend, extra);
+
+	// First element on pend always go to the beggining of main (m_list).
+	move_block(m_deque, pend, 0, 0);
+
+	if (pend.size() > 0)
+		binary_insert(pend);
+
+	// Insert extra at the end of main.
+	if (extra.size() >= m_block_size) {
+		deque_t::size_type main_insert_pos = binary_search(extra, 0, m_deque.size() / m_block_size);
+		move_block(m_deque, extra, 0, main_insert_pos);
+	}
+	if (extra.size() > 0)
+		move_to_end(m_deque, extra, 0, extra.size());
+}
+
+PmergeMe::deque_t::size_type PmergeMe::get_block_big(deque_t::size_type block)
+{
+	return (block * m_block_size + m_block_size - 1);
+}
+
+PmergeMe::deque_t::size_type PmergeMe::binary_search(
+								const deque_t& source,
+								const deque_t::size_type& source_index,
+								const deque_t::size_type& size)
+{
+	unsigned int low = 0;
+	const deque_t::size_type main_size = m_deque.size() / m_block_size;
+	unsigned int high = (main_size > size ? size - 1 : main_size - 1);
+	unsigned int insert_val = source.at(get_block_big(source_index));
+	while (low < high) {
+		const unsigned int mid = low + (high - low) / 2;
+		const unsigned int mid_block = get_block_big(mid);
+		if (m_deque.at(mid_block) == insert_val) {
+			return (mid_block - (m_block_size - 1));
+		} else if (m_deque.at(mid_block) < insert_val) {
+			low = (mid < size ? mid + 1 : size - 1);
+		} else {
+			high = (mid > 0 ? mid - 1 : 0);
+		}
+	}
+	deque_t::size_type insert_pos = get_block_big(low);
+	if (m_deque.at(insert_pos) > insert_val) {
+		insert_pos -= m_block_size - 1;
+	} else {
+		++insert_pos;
+	}
+	return (insert_pos);
+}
+
+// "pend" must be non empty.
+void PmergeMe::binary_insert(deque_t& pend)
+{
+	list_t::size_type size = 4;
+	unsigned int n_jacob = 3;
+	while (pend.size() > 0) {
+		unsigned int p_index = jacobsthal_diff(n_jacob);
+		if (pend.size() / m_block_size < p_index)
+			p_index = pend.size() / m_block_size;
+		while (p_index > 0) {
+			--p_index;
+			list_t::size_type main_insert_pos = binary_search(pend, p_index, size - 1);
+			move_block(m_deque, pend, p_index, main_insert_pos);
+		}
+		size *= 2;
+		++n_jacob;
+	}
+}
+
+void PmergeMe::move(
+		deque_t& target,
+		deque_t& source,
+		const deque_t::size_type& s_start,
+		const deque_t::size_type& s_end,
+		const deque_t::size_type& insert_pos)
+{
+	deque_t::iterator start = source.begin();
+	std::advance(start, s_start);
+	deque_t::iterator end = source.begin();
+	std::advance(end, s_end);
+	deque_t::iterator ins = target.begin();
+	std::advance(ins, insert_pos);
+	target.insert(ins, start, end);
+	source.erase(start, end);
+}
+
+void PmergeMe::move_block(
+		deque_t& target,
+		deque_t& source,
+		const deque_t::size_type& block_nbr,
+		const deque_t::size_type& insert_pos)
+{
+	move(target,
+		source,
+		block_nbr * m_block_size,
+		(block_nbr + 1) * m_block_size,
+		insert_pos);
+}
+
+void PmergeMe::move_to_end(
+		deque_t& target,
+		deque_t& source,
+		const deque_t::size_type& s_start,
+		const deque_t::size_type& s_end)
+{
+	move(target, source, s_start, s_end, target.size());
+}
+
+void PmergeMe::move_block_to_end(
+		deque_t& target,
+		deque_t& source,
+		const deque_t::size_type& block_nbr)
+{
+	move_to_end(target,
+				source,
+				block_nbr * m_block_size,
+				(block_nbr + 1) * m_block_size);
+}
+
+// Put the little pairs into the pend deque to prepare insertion.
+// The remaining elements are temporary put into the extra deque.
+void PmergeMe::split_pairs(deque_t& pend, deque_t& extra)
+{
+	deque_t::size_type i = 0;
+	for ( ; (i + 2) * m_block_size <= m_deque.size(); ++i) {
+		move_block_to_end(pend, m_deque, i);
+	}
+	if (m_deque.size() > i * m_block_size) {
+		move_to_end(extra, m_deque, i * m_block_size, m_deque.size());
+	}
+}
+
+void PmergeMe::swap_blocks(const deque_t::size_type& i)
+{
+	// Create sublist to insert.
+	deque_t::iterator begin = m_deque.begin();
+	std::advance(begin, i * m_block_size + m_block_size);
+	deque_t::iterator end = begin;
+	std::advance(end, m_block_size);
+	deque_t tmp;
+	tmp.assign(begin, end);
+	// Delete sublist from m_deque.
+	m_deque.erase(begin, end);
+	// Insert tmp sublist to correct pos in m_deque.
+	deque_t::iterator ins = m_deque.begin();
+	std::advance(ins, i * m_block_size);
+	m_deque.insert(ins, tmp.begin(), tmp.end());
+}
+
+// Advance the iterator given as argument past the last element of the block.
+PmergeMe::block_d_t PmergeMe::get_block(
+					deque_t::iterator& it,
+					deque_t& deque) const
+{
+	block_d_t block;
+
+	if (static_cast<unsigned long>(std::distance(it, deque.end())) < m_block_size)
+		throw std::out_of_range("deque too small for block size");
+	block.begin = it;
+	std::advance(it, m_block_size - 1);
+	block.last = it;
+	std::advance(it, 1);
+
+	return (block);
+}
+
+// Sort pairs between each other.
+void PmergeMe::sort_pairs_d()
+{
+	for (deque_t::size_type i = 0;
+			(i + 2) * m_block_size <= m_deque.size();
+			i += 2) {
+		if (m_deque.at(get_block_big(i)) 
+				> m_deque.at(get_block_big(i + 1))) {
+			swap_blocks(i);
+		}
+	}
 }
 
 unsigned int PmergeMe::to_uint(const char* str) const
@@ -250,6 +453,8 @@ void PmergeMe::argv(char** argv) { m_argv = argv; }
 * GETTERS *
 **********/
 const PmergeMe::list_t& PmergeMe::list() const { return (m_list); }
+
+const PmergeMe::deque_t& PmergeMe::deque() const { return (m_deque); }
 
 size_t PmergeMe::size(list_t& list)
 {

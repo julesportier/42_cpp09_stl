@@ -261,6 +261,8 @@ std::ostream& operator<<(std::ostream& os, const PmergeMe& rhs)
 **********/
 void PmergeMe::list(list_t new_list) { m_list = new_list; }
 
+void PmergeMe::argv(char** argv) { m_argv = argv; }
+
 /**********
 * GETTERS *
 **********/
@@ -273,3 +275,7 @@ size_t PmergeMe::size(list_t& list)
 		++s;
 	return (s);
 }
+
+size_t PmergeMe::size() { return (m_input_size); }
+
+char** PmergeMe::argv() const { return (m_argv); }

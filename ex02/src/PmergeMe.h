@@ -26,6 +26,9 @@ public:
 	const list_t& list() const;
 	void list(list_t new_list);
 	static size_t size(list_t& list);
+	size_t size();
+	char** argv() const;
+	void argv(char** argv);
 private:
 	char **m_argv;
 	unsigned int m_input_size;

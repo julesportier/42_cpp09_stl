@@ -6,6 +6,8 @@
 
 std::ostream& operator<<(std::ostream& os, const std::list<unsigned int>& list);
 
+std::ostream& operator<<(std::ostream& os, char** arr);
+
 template <typename T>
 void print(const T& val)
 {

@@ -12,13 +12,23 @@ void print_except(const std::exception& e)
 
 std::ostream& operator<<(std::ostream& os, const std::list<unsigned int>& list)
 {
-	os << '[';
 	for (std::list<unsigned int>::const_iterator it = list.begin();
 			it != list.end(); ++it) {
 		os << *it;
 		if (&(*it) != &(list.back()))
 			os << " ";
 	}
-	os << ']';
+	return (os);
+}
+
+std::ostream& operator<<(std::ostream& os, char** arr)
+{
+	if (arr) {
+		for (int i = 0;	arr[i] != NULL; ) {
+			os << arr[i];
+			if (arr[++i] != NULL)
+				os << " ";
+		}
+	}
 	return (os);
 }

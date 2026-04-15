@@ -241,21 +241,6 @@ unsigned int PmergeMe::to_uint(const char* str) const
 	return (static_cast<unsigned int>(ul));
 }
 
-/************
-* OPERATORS *
-************/
-std::ostream& operator<<(std::ostream& os, const PmergeMe& rhs)
-{
-	const PmergeMe::list_t& list = rhs.list();
-	for (PmergeMe::list_t::const_iterator it = list.begin();
-			it != list.end(); ++it) {
-		os << *it;
-		if (&(*it) != &(list.back()))
-			os << " ";
-	}
-	return (os);
-}
-
 /**********
 * SETTERS *
 **********/

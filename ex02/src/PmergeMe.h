@@ -46,6 +46,4 @@ private:
 	void binary_insert(list_t pend);
 };
 
-std::ostream& operator<<(std::ostream& os, const PmergeMe& rhs);
-
 #endif

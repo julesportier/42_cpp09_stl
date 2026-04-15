@@ -200,14 +200,14 @@ void PmergeMe::merge_insert_sort_l()
 		binary_insert(pend);
 
 	// Insert extra at the end of main.
-	if (extra.size() >= m_block_size) {
+	if (size(extra) >= m_block_size) {
 		list_t::iterator extra_it = extra.begin();
 		block_t block = get_block(extra_it, extra);
 		list_t::iterator main_insert_pos
 			= binary_search(block.last, size(m_list) / m_block_size);
 		m_list.splice(main_insert_pos, pend, block.begin, ++block.last);
 	}
-	if (extra.size() > 0)
+	if (size(extra) > 0)
 		m_list.splice(m_list.end(), extra);
 }
 

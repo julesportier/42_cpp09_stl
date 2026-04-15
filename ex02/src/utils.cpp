@@ -1,8 +1,13 @@
 #include "utils.h"
 
+void print_error(const std::string& str)
+{
+	std::cerr << str << '\n';
+}
+
 void print_except(const std::exception& e)
 {
-	std::cout << "Error: " << e.what() << '\n';
+	std::cerr << "Error: " << e.what() << '\n';
 }
 
 std::ostream& operator<<(std::ostream& os, const std::list<unsigned int>& list)

@@ -4,7 +4,7 @@
 int main(int argc, char *argv[])
 {
 	if (argc < 2) {
-		print("Usage: PmergeMe LIST_TO_SORT");
+		print_error("Usage: PmergeMe LIST_TO_SORT");
 		return (1);
 	}
 	try {

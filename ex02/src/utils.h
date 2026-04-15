@@ -12,6 +12,8 @@ void print(const T& val)
 	std::cout << val << '\n';
 }
 
+void print_error(const std::string& str);
+
 void print_except(const std::exception& e);
 
 // Debug variable printing

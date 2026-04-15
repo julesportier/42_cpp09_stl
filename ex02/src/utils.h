@@ -3,9 +3,10 @@
 
 # include <iostream>
 # include <list>
+# include <deque>
 
 std::ostream& operator<<(std::ostream& os, const std::list<unsigned int>& list);
-
+std::ostream& operator<<(std::ostream& os, const std::deque<unsigned int>& deque);
 std::ostream& operator<<(std::ostream& os, char** arr);
 
 template <typename T>

@@ -21,6 +21,21 @@ std::ostream& operator<<(std::ostream& os, const std::list<unsigned int>& list)
 	return (os);
 }
 
+std::ostream& operator<<(std::ostream& os, const std::deque<unsigned int>& deque)
+{
+	if (deque.size() == 0)
+		return (os);
+	std::deque<unsigned int>::const_iterator it = deque.begin();
+	while(1) {
+		os << *it;
+		++it;
+		if (it == deque.end())
+			break;
+		os << " ";
+	}
+	return (os);
+}
+
 std::ostream& operator<<(std::ostream& os, char** arr)
 {
 	if (arr) {

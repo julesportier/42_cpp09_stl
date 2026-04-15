@@ -15,14 +15,17 @@ PmergeMe::PmergeMe(const PmergeMe& src)
 {}
 
 PmergeMe::PmergeMe(char** argv)
-	: m_block_size(1)
+	: m_argv(argv)
+	, m_block_size(1)
 {
-	if (argv == NULL)
-		throw std::runtime_error("ctor with c array arg cannot be NULL");
-	for (list_t::size_type i = 0; argv[i] != NULL; ++i) {
-		const unsigned int tmp = to_uint(argv[i]);
-		m_list.push_back(tmp);
+	if (argv == NULL || argv[0] == NULL)
+		throw std::runtime_error("ctor with c array arg cannot be NULL or empty");
+	int i = 0;
+	for ( ; argv[i] != NULL; ++i) {
+		if (i > MAX_INPUT)
+			throw std::out_of_range("Input list too big");
 	}
+	m_input_size = i;
 }
 
 PmergeMe::~PmergeMe() {}
@@ -178,13 +181,22 @@ void PmergeMe::split_pairs(list_t& pend, list_t& extra)
 
 void PmergeMe::merge_insert_sort_l()
 {
+	for (list_t::size_type i = 0; m_argv[i] != NULL; ++i) {
+		const unsigned int tmp = to_uint(m_argv[i]);
+		m_list.push_back(tmp);
+	}
+	merge_insert_sort_l_impl();
+}
+
+void PmergeMe::merge_insert_sort_l_impl()
+{
 	if (size(m_list) < m_block_size * 2)
 		return;
 
 	sort_pairs();
 
 	m_block_size *= 2;
-	merge_insert_sort_l();
+	merge_insert_sort_l_impl();
 	m_block_size /= 2;
 
 	list_t pend;

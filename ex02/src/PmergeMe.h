@@ -1,6 +1,8 @@
 #ifndef PMERGEME_H
 # define PMERGEME_H
 
+# define MAX_INPUT 3000
+
 # include <list>
 # include <ostream>
 
@@ -19,11 +21,14 @@ public:
 	PmergeMe& operator=(const PmergeMe& src);
 
 	void merge_insert_sort_l();
+	void merge_insert_sort_l_impl();
 
 	const list_t& list() const;
 	void list(list_t new_list);
 	static size_t size(list_t& list);
 private:
+	char **m_argv;
+	unsigned int m_input_size;
 	list_t m_list;
 	list_t::size_type m_block_size;
 	unsigned int to_uint(const char* str) const;

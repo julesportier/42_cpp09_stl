@@ -10,12 +10,12 @@ int main(int argc, char *argv[])
 	}
 	try {
 		PmergeMe merge_insert(argv + 1);
-		std::cout << "Before: " << merge_insert.argv() << '\n';
 
 		const std::clock_t list_start = std::clock();
 		merge_insert.merge_insert_sort_l();
 		const std::clock_t list_end = std::clock();
 		const std::clock_t list_time = list_end - list_start;
+		std::cout << "Before: " << merge_insert.argv() << '\n';
 		std::cout << "After:  " << merge_insert.list() << '\n';
 		std::cout << "Time to process a range of " << merge_insert.size()
 			<< " elements with std::list : " << list_time << " us\n";
@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
 		merge_insert.merge_insert_sort_d();
 		const std::clock_t deque_end = std::clock();
 		const std::clock_t deque_time = deque_end - deque_start;
+		// std::cout << "Before: " << merge_insert.argv() << '\n';
 		// std::cout << "After:  " << merge_insert.deque() << '\n';
 		std::cout << "Time to process a range of " << merge_insert.size()
 			<< " elements with std::deque : " << deque_time << " us\n";

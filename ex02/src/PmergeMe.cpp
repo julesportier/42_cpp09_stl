@@ -20,9 +20,9 @@ PmergeMe::PmergeMe(char** argv)
 {
 	if (argv == NULL || argv[0] == NULL)
 		throw std::runtime_error("ctor with c array arg cannot be NULL or empty");
-	int i = 0;
+	int i = 1;
 	for ( ; argv[i] != NULL; ++i) {
-		if (i > MAX_INPUT)
+		if (i >= MAX_INPUT)
 			throw std::out_of_range("Input list too big");
 	}
 	m_input_size = i;

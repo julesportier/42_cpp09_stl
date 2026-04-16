@@ -4,7 +4,7 @@
 int main(int argc, char *argv[])
 {
 	if (argc != 2) {
-		print("Usage: RPN \"REVERSE POLISH NOTATION EXPRESSION\"");
+		std::cerr << "Usage: RPN \"REVERSE POLISH NOTATION EXPRESSION\"\n";
 		return (1);
 	}
 	try {

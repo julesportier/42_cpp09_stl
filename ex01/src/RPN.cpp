@@ -1,4 +1,5 @@
 #include "RPN.h"
+#include <limits>
 #include <stdexcept>
 #include <sstream>
 
@@ -56,15 +57,29 @@ void RPN::apply(const char& op, std::stack<long>& stack) const
 	stack.pop();
  	switch (op) {
 	case '+':
+		if ((second > 0 && first > std::numeric_limits<long>::max() - second)
+				|| (second < 0 && first < std::numeric_limits<long>::min() - second))
+			throw std::runtime_error("overflow");
 		stack.push(first + second);
 		break;
 	case '-':
+		if ((second < 0 && first > std::numeric_limits<long>::max() + second)
+				|| (second > 0 && first < std::numeric_limits<long>::min() + second))
+			throw std::runtime_error("overflow");
 		stack.push(first - second);
 		break;
 	case '*':
+		if ((second != 0 && first > std::numeric_limits<long>::max() / second)
+				|| (second != 0 && first < std::numeric_limits<long>::min() / second)
+				|| (first == -1 && second == std::numeric_limits<long>::min())
+				|| (second == -1 && first == std::numeric_limits<long>::min()))
+			throw std::runtime_error("overflow");
 		stack.push(first * second);
 		break;
 	case '/':
+		if (second == 0
+				|| (second == -1 && first == std::numeric_limits<long>::min()))
+			throw std::runtime_error("division by zero");
 		stack.push(first / second);
 		break;
 	}

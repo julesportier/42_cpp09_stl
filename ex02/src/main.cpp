@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 		std::cout << "Before: " << merge_insert.argv() << '\n';
 		std::cout << "After:  " << merge_insert.list() << '\n';
 		std::cout << "Time to process a range of " << merge_insert.size()
-			<< " elements with std::list : " << list_time << " us\n";
+			<< " elements with std::list :  " << list_time << " us\n";
 
 		const std::clock_t deque_start = std::clock();
 		merge_insert.merge_insert_sort_d();

@@ -11,9 +11,13 @@
 **************************/
 DataBase::DataBase() {}
 
-DataBase::DataBase(const std::string& file, const char& sep)
+DataBase::DataBase(
+	const std::string& file,
+	const char& sep,
+	const std::string& first,
+	const std::string& second)
 {
-	parse_db(file, sep);
+	parse_db(file, sep, first, second);
 }
 
 DataBase::DataBase(const DataBase& src) : m_db(src.m_db) {}
@@ -67,7 +71,11 @@ std::pair<Date, double> DataBase::at(const Date& date)
 /**********
 * METHODS *
 **********/
-void DataBase::check_header(std::ifstream& ifs, const char& sep)
+void DataBase::check_header(
+		std::ifstream& ifs,
+		const char& sep,
+		const std::string& first,
+		const std::string& second)
 {
 	std::string line;
 	std::getline(ifs, line);
@@ -76,11 +84,25 @@ void DataBase::check_header(std::ifstream& ifs, const char& sep)
 	if (!line_s.good())
 		throw std::runtime_error("reading database failed");
 	int i = 0;
-	for ( ; std::getline(line_s, line, sep) && i < 2; ++i) {}
-	if (i == 0)
-		throw Illformed("empty database");
+	std::string col;
+	for ( ; std::getline(line_s, col, sep) && i < 2; ++i) {}
+	if (i == 0) {
+		if (ifs.eof())
+			throw std::runtime_error("empty database");
+		throw Illformed("missing header");
+	}
 	if (i != 2)
 		throw Illformed("invalid columns number in database");
+	line_s.clear();
+	line_s << line;
+	std::getline(line_s, col, sep);
+	trim(col, ' ');
+	if (col != first)
+		throw Illformed("illformed header");
+	std::getline(line_s, col, sep);
+	trim(col, ' ');
+	if (col != second)
+		throw Illformed("illformed header");
 }
 
 std::pair<Date, double> DataBase::parse_line(
@@ -109,13 +131,17 @@ std::pair<Date, double> DataBase::parse_line(
 	}
 }
 
-void DataBase::parse_db(const std::string& file, const char& sep)
+void DataBase::parse_db(
+		const std::string& file,
+		const char& sep,
+		const std::string& first,
+		const std::string& second)
 {
 	std::ifstream ifs(file.c_str());
 	if (!ifs.is_open())
 		throw std::runtime_error("opening database failed");
 
-	check_header(ifs, sep);
+	check_header(ifs, sep, first, second);
 
 	for (std::string line; std::getline(ifs, line); ) {
 		std::pair<Date, double> p(parse_line(line, sep));

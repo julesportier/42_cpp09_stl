@@ -39,7 +39,7 @@ void BitcoinExchange::values(const std::string& filename)
 	std::ifstream dates(filename.c_str());
 	if (!dates.is_open())
 		throw std::runtime_error("opening input file failed");
-	DataBase::check_header(dates, '|');
+	DataBase::check_header(dates, '|', "date", "value");
 	for (std::string line; std::getline(dates, line); ) {
 		std::pair<Date, double> input;
 		try {
@@ -61,6 +61,6 @@ void BitcoinExchange::values(const std::string& filename)
 
 void BitcoinExchange::parse_db(const std::string& file, const char& sep)
 {
-	DataBase db(file, sep);
+	DataBase db(file, sep, "date", "exchange_rate");
 	m_db = db;
 }
